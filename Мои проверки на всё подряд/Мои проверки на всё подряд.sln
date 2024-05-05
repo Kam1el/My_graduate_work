@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34330.188
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Мои проверки на всё подряд", "Мои проверки на всё подряд\Мои проверки на всё подряд.pyproj", "{62D768F7-64F7-4C6E-8CA8-5A91C74B56E0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{62D768F7-64F7-4C6E-8CA8-5A91C74B56E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62D768F7-64F7-4C6E-8CA8-5A91C74B56E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8C60663A-1BD1-4BCA-B4A5-22C2571EFF37}
+	EndGlobalSection
+EndGlobal
