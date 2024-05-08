@@ -1,35 +1,30 @@
 from enum import unique
+import os.path
 from os import name
 import pandas as pd
+import openpyxl
+from sklearn.datasets import load_wine 
+from sklearn.model_selection import train_test_split 
+from sklearn.metrics import accuracy_score, classification_report 
+from sklearn.naive_bayes import ComplementNB
 
-#create DataFrame
-df = pd.DataFrame({'team': ['Mavs', 'Lakers', 'Spurs', 'Cavs'],
- 'name': ['Dirk', 'Kobe', 'Tim', 'Lebron'],
- 'rebounds': [11, 7, 14, 7],
- 'points': [26, 31, 22, 29]})
-
-#view DataFrame
-print(df)
-
-df.insert(4, "Family", "Johns")
-
-for row in range(0,len(df.index)):
-    if df.iloc [row]['points'] == 31:
-        df.at[row,"name"] = "S0"
-
-#Тут мы опишем статистический вывод
-def Unique_column(col_name, df):
-    
-    a = df[col_name]
-    name = col_name
-    print("This is a name of that column -", name)
-    return a.unique()
-Response = "Yes"
-#Тут мы опишем ввод параметров
-while (Response != "No"):
-    parameter = input("Enter parameter, please, only string ")
-    print(Unique_column(parameter,df))
-    Response = input("Do you want to add other parameters. Only Yes/No ")
-
-
-#print(df)
+# Loading the dataset  
+dataset = load_wine() 
+X = dataset.data 
+y = dataset.target
+print(X,y)
+  
+# Splitting the data into train and test sets 
+#X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.15, random_state = 42) 
+  
+# Creating and training the Complement Naive Bayes Classifier 
+#classifier = ComplementNB() 
+#classifier.fit(X_train, y_train) 
+  
+# Evaluating the classifier 
+#prediction = classifier.predict(X_test) 
+#prediction_train = classifier.predict(X_train) 
+  
+#print(f"Training Set Accuracy : {accuracy_score(y_train, prediction_train) * 100} %\n") 
+#print(f"Test Set Accuracy : {accuracy_score(y_test, prediction) * 100} % \n\n") 
+#print(f"Classifier Report : \n\n {classification_report(y_test, prediction)}")
