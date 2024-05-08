@@ -1,4 +1,3 @@
-
 from locale import normalize
 import numpy as np
 import pandas as pd
@@ -42,23 +41,38 @@ for row in range(0,len(df.index)):
 #Столбец с информацией по смертности более не нужен, удаляем
 df.drop('grav', axis= 1 , inplace= True)
 
-def P_B(col_name, df, par_val,col_name_ask):
-    a = df[col_name]
-    b = df[col_name_ask]
-    ser1 = df.loc[a == par_val, 'Severity'].value_counts(normalize=True)
-    ser2 = df.loc[:,'Severity'].value_counts(normalize=True)
-    fin_ser = pd.Series()
-    print(ser1)
-    print(ser2)
-    uniq = b.unique ()
-    print(a.unique ())
-    print(len(uniq))
-    ser3 = (ser1 * ser2)
-    print(ser3)
-    P_B = ser3.sum()
-    print(P_B, end='\n\n')
-    for i in range(0,len(uniq)):
-        print(ser3.iloc[i]/P_B)
+print(df.head(3))
+col_name_B = input("Enter parameter, please, only string ")
+
+def ret_uniq_mean_col(col_name_B, df):
+    b = df[col_name_B]
+    sheet_val = b.unique ()   
+    sheet_val = np.sort(sheet_val)
+    print(sheet_val)
+    return sheet_val
+
+def P_A_B(col_name_B, df, sheet_val,col_name_A):
+    b = df[col_name_B]
+    a = df[col_name_A]
+    df_res = pd.DataFrame()
+#    df_ind = pd.DataFrame(index=['S0','S3','S2','S1'])
+    for i in range(0,len(sheet_val)):
+        ser1 = df.loc[b == sheet_val[i], col_name_A].value_counts(normalize=True)
+        ser2 = df.loc[:,col_name_A].value_counts(normalize=True)
+        fin_ser = pd.Series()
+        uniq = a.unique ()
+        ser3 = (ser1 * ser2)
+        P_B = ser3.sum()
+#        print(P_B, end='\n\n')
+        for i in range(0,len(uniq)):
+            res = pd.Series(ser3.iloc[i]/P_B)
+            fin_ser = pd.concat([fin_ser, res], axis=0)
+        df_res = pd.concat([df_res,fin_ser.to_frame().T], axis=0)
+    print(ser3/P_B)
+    df_res = df_res.T
+    df_res.dropna(how='all')
+    print(df_res)
         
-        
-P_B('lum', df, 5,'Severity')
+sheet_val = ret_uniq_mean_col(col_name_B, df)
+
+P_A_B(col_name_B, df, sheet_val,'Severity')
