@@ -1,4 +1,3 @@
-
 from enum import unique
 import os.path
 from os import name
