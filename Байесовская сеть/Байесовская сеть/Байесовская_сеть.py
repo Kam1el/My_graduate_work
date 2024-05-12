@@ -58,21 +58,29 @@ def P_A_B(col_name_B, df, sheet_val,col_name_A):
 #    df_ind = pd.DataFrame(index=['S0','S3','S2','S1'])
     for i in range(0,len(sheet_val)):
         ser1 = df.loc[b == sheet_val[i], col_name_A].value_counts(normalize=True)
+        ser1 = ser1.sort_index(level=0)
         ser2 = df.loc[:,col_name_A].value_counts(normalize=True)
+        ser2 = ser2.sort_index(level=0)
+        print(sheet_val[i])
+        print(ser1)
+        print(ser2)
         fin_ser = pd.Series()
         uniq = a.unique ()
         ser3 = (ser1 * ser2)
         P_B = ser3.sum()
+        print(ser3)
 #        print(P_B, end='\n\n')
         for i in range(0,len(uniq)):
             res = pd.Series(ser3.iloc[i]/P_B)
             fin_ser = pd.concat([fin_ser, res], axis=0)
-        df_res = pd.concat([df_res,fin_ser.to_frame().T], axis=0)
-    print(ser3/P_B)
-    df_res = df_res.T
-    df_res.dropna(how='all')
-    print(df_res)
+#            print(fin_ser)
+#        df_res = pd.concat([df_res,fin_ser.to_frame().T], axis=0)
+#    print(ser3.iloc[i]/P_B)
+        print(fin_ser)
+#    df_res = df_res.T
+#    df_res.dropna(how='all')
+#   print(df_res)
         
 sheet_val = ret_uniq_mean_col(col_name_B, df)
 
-P_A_B(col_name_B, df, sheet_val,'Severity')
+P_A_B(col_name_B, df, sheet_val,'prof')

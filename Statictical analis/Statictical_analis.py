@@ -1,10 +1,15 @@
 from enum import unique
-import os.path
-from os import name
 import pandas as pd
 import openpyxl
 import numpy as np
+from pgmpy.models import BayesianNetwork
+from pgmpy.estimators import MaximumLikelihoodEstimator, BayesianEstimator
+from pgmpy.utils import get_example_model
+from pgmpy.inference import VariableElimination
+from pgmpy.metrics import correlation_score, log_likelihood_score, BayesianModelProbability
+import time
 
+start = time.perf_counter()
 #Необходимые нам переменные, чтобы всё заработало
 df = pd.read_excel(r"C:\Users\PC\Documents\Diplom\Bayes_start_table_1.xlsx", engine='openpyxl', header = 0)
 test_date = {
@@ -28,7 +33,7 @@ test_date1 = {
     'Severity':[0],
     }
 #Оставил только 10000 записей, чтобы работало быстрее
-df = df[df.catv.index < 10000]
+df = df[df.catv.index < 50000]
 df.reset_index(drop=True, inplace=True)
 #Убираем ограничение по количеству выводимых столбцов, строк. Удалили некоторые строки, необходимо сбросить индексы строк
 pd.set_option('display.max_rows', None)
@@ -46,6 +51,9 @@ df = df[(df.catv.isin(values1) == True)]
 df = df[(df.grav.isin(values2) == True)]
 #Удалили некоторые строки, необходимо сбросить индексы строк
 df.reset_index(drop=True, inplace=True)
+
+df.to_pickle (" my_data.pkl ")
+df = pd.read_pickle (" my_data.pkl ")
 
 #Распределяем степень тяжести происшествия по каждой аварии с каждой точки зрения 
 #(у одной аварии, т.е. одного ID аварии может быть 2 и более записей, т.к. авария рассматривается с точки зрения всех участников аварии)
@@ -118,5 +126,99 @@ def inp_scen_sev(df, variab = pd.DataFrame(test_date), scen_df = pd.DataFrame(te
         with pd.ExcelWriter(r'C:\\Users\\PC\\Documents\\Diplom\\Scenarios.xlsx') as writer:
             scen_df.to_excel (writer,index= False, sheet_name='Scen')
             df_fr_stat.to_excel (writer,index= False, sheet_name='Sev')
+        return sheet_par, sheet_val
 
-inp_scen_sev(df, variab = pd.DataFrame(test_date), scen_df = pd.DataFrame(test_date1), Response = "Yes", sheet_par = [], sheet_val = [], par_count = 0.0)
+
+sheet_par, sheet_val =  inp_scen_sev(df, variab = pd.DataFrame(test_date), scen_df = pd.DataFrame(test_date1), Response = "Yes", sheet_par = [], sheet_val = [], par_count = 0.0)
+print(sheet_par, sheet_val)
+
+#Инициализируем байесовскую сеть и наполняем её данными, узлами и рёбрами
+model = BayesianNetwork([('atm', 'surf'), ('infra', 'surf'), ('infra', 'catr'), ('atm', 'lum'), ('infra', 'lum'),('infra','prof'), ('infra','situ'), ('catr','int'),('int','circ'),
+                       ('int','col'),('circ','manv'),('col','manv'),('catv','Severity'), ('surf','Severity'), ('situ','Severity'), ('lum','Severity'), ('manv','Severity'), 
+                       ('prof','Severity')])
+model.fit(df, estimator=MaximumLikelihoodEstimator)
+#Проверяем корректность получившейся модели
+print(model.check_model())
+#Заводим переменную для расчёта предикта сценариев по параметрам пользователя
+infer = VariableElimination(model)
+#Да, калично, но динамического создания условия для байесовской сети пока не найдено/разработано
+if len(sheet_par) == 1:
+#Рассчитываем конечный результат в виде итоговой тяжести
+    print(infer.map_query(['Severity'], evidence={sheet_par[0]: sheet_val[0]}))
+#Тоже самое, но в виде таблицы вероятностей от наибольшей к наименьшей
+    prob_var = infer.query(['Severity'], evidence={sheet_par[0]: sheet_val[0]})
+    print(prob_var)
+#Повторяем это условие много-много раз, чтобы точно попасть в любое количество введённых пользователем параметров, для которых есть сценарии
+elif len(sheet_par) == 2:
+    print(infer.map_query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1]}))
+    prob_var = infer.query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1]})
+    print(prob_var)
+elif len(sheet_par) == 3:
+    print(infer.map_query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2]}))
+    prob_var = infer.query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2]})
+    print(prob_var)
+elif len(sheet_par) == 4:
+    print(infer.map_query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3]}))
+    prob_var = infer.query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3]})
+    print(prob_var)
+elif len(sheet_par) == 5:
+    print(infer.map_query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3],
+                                                  sheet_par[4]: sheet_val[4]}))
+    prob_var = infer.query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3],
+                                                   sheet_par[4]: sheet_val[4]})
+    print(prob_var)
+elif len(sheet_par) == 6:
+    print(infer.map_query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3],
+                                                  sheet_par[4]: sheet_val[4], sheet_par[5]: sheet_val[5]}))
+    prob_var = infer.query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3],
+                                                   sheet_par[4]: sheet_val[4], sheet_par[5]: sheet_val[5]})
+    print(prob_var)
+elif len(sheet_par) == 7:
+    print(infer.map_query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3],
+                                                  sheet_par[4]: sheet_val[4], sheet_par[5]: sheet_val[5], sheet_par[6]: sheet_val[6]}))
+    prob_var = infer.query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3],
+                                                   sheet_par[4]: sheet_val[4], sheet_par[5]: sheet_val[5], sheet_par[6]: sheet_val[6]})
+    print(prob_var)
+elif len(sheet_par) == 8:
+    print(infer.map_query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3],
+                                                  sheet_par[4]: sheet_val[4], sheet_par[5]: sheet_val[5], sheet_par[6]: sheet_val[6], sheet_par[7]: sheet_val[7]}))
+    prob_var = infer.query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3],
+                                                   sheet_par[4]: sheet_val[4], sheet_par[5]: sheet_val[5], sheet_par[6]: sheet_val[6], sheet_par[7]: sheet_val[7]})
+    print(prob_var)
+elif len(sheet_par) == 9:
+    print(infer.map_query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3],
+                                                  sheet_par[4]: sheet_val[4], sheet_par[5]: sheet_val[5], sheet_par[6]: sheet_val[6], sheet_par[7]: sheet_val[7],
+                                                  sheet_par[8]: sheet_val[8]}))
+    prob_var = infer.query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3],
+                                                   sheet_par[4]: sheet_val[4], sheet_par[5]: sheet_val[5], sheet_par[6]: sheet_val[6], sheet_par[7]: sheet_val[7],
+                                                   sheet_par[8]: sheet_val[8]})
+    print(prob_var)
+elif len(sheet_par) == 10:
+    print(infer.map_query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3],
+                                                  sheet_par[4]: sheet_val[4], sheet_par[5]: sheet_val[5], sheet_par[6]: sheet_val[6], sheet_par[7]: sheet_val[7],
+                                                  sheet_par[8]: sheet_val[8], sheet_par[9]: sheet_val[9]}))
+    prob_var = infer.query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3],
+                                                   sheet_par[4]: sheet_val[4], sheet_par[5]: sheet_val[5], sheet_par[6]: sheet_val[6], sheet_par[7]: sheet_val[7],
+                                                   sheet_par[8]: sheet_val[8], sheet_par[9]: sheet_val[9]})
+    print(prob_var)
+elif len(sheet_par) == 11:
+    print(infer.map_query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3],
+                                                  sheet_par[4]: sheet_val[4], sheet_par[5]: sheet_val[5], sheet_par[6]: sheet_val[6], sheet_par[7]: sheet_val[7],
+                                                  sheet_par[8]: sheet_val[8], sheet_par[9]: sheet_val[9], sheet_par[10]: sheet_val[10]}))
+    prob_var = infer.query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3],
+                                                   sheet_par[4]: sheet_val[4], sheet_par[5]: sheet_val[5], sheet_par[6]: sheet_val[6], sheet_par[7]: sheet_val[7],
+                                                   sheet_par[8]: sheet_val[8], sheet_par[9]: sheet_val[9], sheet_par[10]: sheet_val[10]})
+    print(prob_var)
+elif len(sheet_par) == 12:
+    print(infer.map_query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3],
+                                                  sheet_par[4]: sheet_val[4], sheet_par[5]: sheet_val[5], sheet_par[6]: sheet_val[6], sheet_par[7]: sheet_val[7],
+                                                  sheet_par[8]: sheet_val[8], sheet_par[9]: sheet_val[9], sheet_par[10]: sheet_val[10], sheet_par[11]: sheet_val[11]}))
+    prob_var = infer.query(['Severity'], evidence={sheet_par[0]: sheet_val[0], sheet_par[1]: sheet_val[1],sheet_par[2]: sheet_val[2], sheet_par[3]: sheet_val[3],
+                                                   sheet_par[4]: sheet_val[4], sheet_par[5]: sheet_val[5], sheet_par[6]: sheet_val[6], sheet_par[7]: sheet_val[7],
+                                                   sheet_par[8]: sheet_val[8], sheet_par[9]: sheet_val[9], sheet_par[10]: sheet_val[10], sheet_par[11]: sheet_val[11]})
+    print(prob_var)
+#По идее эта функция должна оценивать корректность самой байесовской сети, но ещё не доработана...ожидаем
+#print(BayesianModelProbability(model))
+
+finish = time.perf_counter()
+print(str(finish - start))
